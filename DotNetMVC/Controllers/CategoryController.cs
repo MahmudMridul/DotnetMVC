@@ -22,5 +22,12 @@ namespace DotNetMVC.Controllers
             IEnumerable<Category> Categories = _db.Categories;
             return View(Categories);
         }
+
+        //GET -CREATE
+        public IActionResult Create()
+        {
+
+            return View();
+        }
     }
 }
