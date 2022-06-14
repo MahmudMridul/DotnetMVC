@@ -29,5 +29,20 @@ namespace DotNetMVC.Controllers
 
             return View();
         }
+
+        //POST -CREATE
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Create(Category CategoryObj)
+        {
+            if(ModelState.IsValid)
+            {
+                _db.Categories.Add(CategoryObj);
+                _db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+
+            return View(CategoryObj);
+        }
     }
 }
