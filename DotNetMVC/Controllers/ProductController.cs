@@ -1,9 +1,12 @@
 ﻿using DotNetMVC.Data;
 using DotNetMVC.Models;
 using DotNetMVC.Models.ViewModels;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace DotNetMVC.Controllers
@@ -11,10 +14,12 @@ namespace DotNetMVC.Controllers
     public class ProductController : Controller
     {
         private readonly ApplicationContext _db;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public ProductController(ApplicationContext db)
+        public ProductController(ApplicationContext db, IWebHostEnvironment webHostEnvironment)
         {
             _db = db;
+            _webHostEnvironment = webHostEnvironment;
         }
         public IActionResult Index()
         {
@@ -23,7 +28,10 @@ namespace DotNetMVC.Controllers
 
             foreach(var product in Products)
             {
-                product.Category = _db.Categories.Find(product.CategoryId);
+                product.Category = _db.Categories.SingleOrDefault
+                (
+                    category => category.Id == product.CategoryId
+                );
             }
 
             return View(Products);
@@ -81,16 +89,41 @@ namespace DotNetMVC.Controllers
         //POST -CREATE
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Upsert(Product ProductObj)
+        public IActionResult Upsert(ProductViewModel ProductVMObj)
         {
             if (ModelState.IsValid)
             {
-                _db.Products.Add(ProductObj);
+                var files = HttpContext.Request.Form.Files;
+                string webRootPath = _webHostEnvironment.WebRootPath;
+
+                if(ProductVMObj.Product.Id == 0)
+                {
+                    //Creating
+                    string upload = webRootPath + WebConstants.ImagePath;
+                    string fileName = Guid.NewGuid().ToString();
+                    string extension = Path.GetExtension(files[0].FileName);
+
+                    using (var fileStream = new FileStream(Path.Combine(upload, fileName + extension), FileMode.Create))
+                    {
+                        files[0].CopyTo(fileStream);
+                    }
+
+                    ProductVMObj.Product.Image = fileName + extension;
+
+                    _db.Products.Add(ProductVMObj.Product);
+
+                }
+                else
+                {
+                    //update
+                }
+
                 _db.SaveChanges();
+
                 return RedirectToAction("Index");
             }
 
-            return View(ProductObj);
+            return View();
         }
 
         //GET - EDIT
