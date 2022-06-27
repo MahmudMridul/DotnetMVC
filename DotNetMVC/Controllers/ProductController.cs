@@ -4,6 +4,7 @@ using DotNetMVC.Models.ViewModels;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -116,6 +117,37 @@ namespace DotNetMVC.Controllers
                 else
                 {
                     //update
+                    var ProductFromDb = _db.Products.AsNoTracking().FirstOrDefault
+                        (
+                            product => product.Id == ProductVMObj.Product.Id
+                        );
+
+                    if(files.Count > 0)
+                    {
+                        string upload = webRootPath + WebConstants.ImagePath;
+                        string fileName = Guid.NewGuid().ToString();
+                        string extension = Path.GetExtension(files[0].FileName);
+
+                        var oldFile = Path.Combine(upload, ProductFromDb.Image);
+
+                        if(System.IO.File.Exists(oldFile))
+                        {
+                            System.IO.File.Delete(oldFile);
+                        }
+
+                        using (var fileStream = new FileStream(Path.Combine(upload, fileName + extension), FileMode.Create))
+                        {
+                            files[0].CopyTo(fileStream);
+                        }
+
+                        ProductVMObj.Product.Image = fileName + extension;
+                    }
+                    else
+                    {
+                        ProductVMObj.Product.Image = ProductFromDb.Image;
+                    }
+
+                    _db.Products.Update(ProductVMObj.Product);
                 }
 
                 _db.SaveChanges();
