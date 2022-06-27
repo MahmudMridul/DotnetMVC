@@ -455,5 +455,5 @@ $RECYCLE.BIN/
 
 course_12.zip
 course_12/*
-DotNetMVC/wwwroot/images/
+DotNetMVC/wwwroot/images/*.*
 
